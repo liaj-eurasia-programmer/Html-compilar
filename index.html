@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Compiler/Preview Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      position: relative;
+    }
+    textarea {
+      width: 50%;
+      height: 100%;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      resize: none;
+    }
+    iframe {
+      width: 50%;
+      height: 100%;
+      border: 1px solid #ccc;
+    }
+    h1 {
+      text-align: center;
+      padding: 10px;
+      background-color: #f4f4f4;
+      margin: 0;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+      background-color: #f4f4f4;
+    }
+    .toolbar button {
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+    }
+    .toolbar button:hover {
+      background-color: #0056b3;
+    }
+    .fullscreen {
+      width: 100% !important;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>HTML Compiler/Preview Tool</h1>
+  <div class="toolbar">
+    <button id="fullscreenButton">Full-Screen Preview</button>
+    <button id="resetButton">Reset</button>
+    <button id="saveButton">Save</button>
+  </div>
+  <div class="container">
+    <textarea id="htmlInput" placeholder="Write your HTML code here..."></textarea>
+    <iframe id="preview"></iframe>
+  </div>
+
+  <script>
+    const htmlInput = document.getElementById('htmlInput');
+    const preview = document.getElementById('preview').contentWindow.document;
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    const resetButton = document.getElementById('resetButton');
+    const saveButton = document.getElementById('saveButton');
+
+    let isFullscreen = false;
+
+    // Update the preview
+    function updatePreview() {
+      preview.open();
+      preview.write(htmlInput.value);
+      preview.close();
+    }
+
+    // Full-screen functionality
+    fullscreenButton.addEventListener('click', () => {
+      isFullscreen = !isFullscreen;
+      if (isFullscreen) {
+        htmlInput.classList.add('hidden');
+        preview.parentElement.classList.add('fullscreen');
+        fullscreenButton.textContent = 'Exit Full-Screen';
+      } else {
+        htmlInput.classList.remove('hidden');
+        preview.parentElement.classList.remove('fullscreen');
+        fullscreenButton.textContent = 'Full-Screen Preview';
+      }
+    });
+
+    // Reset functionality
+    resetButton.addEventListener('click', () => {
+      htmlInput.value = '';
+      updatePreview();
+    });
+
+    // Save functionality
+    saveButton.addEventListener('click', () => {
+      const blob = new Blob([htmlInput.value], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'output.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Initialize with some example HTML
+    htmlInput.value = `<h1>Hello, World!</h1>
+<p>This is a simple HTML preview tool.</p>`;
+    updatePreview();
+
+    // Listen for input changes
+    htmlInput.addEventListener('input', updatePreview);
+  </script>
+</body>
+</html>
