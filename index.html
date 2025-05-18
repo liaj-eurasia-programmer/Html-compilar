@@ -1,137 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HTML Compiler/Preview Tool</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    .container {
-      display: flex;
-      flex: 1;
-      position: relative;
-    }
-    textarea {
-      width: 50%;
-      height: 100%;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      resize: none;
-    }
-    iframe {
-      width: 50%;
-      height: 100%;
-      border: 1px solid #ccc;
-    }
-    h1 {
-      text-align: center;
-      padding: 10px;
-      background-color: #f4f4f4;
-      margin: 0;
-    }
-    .toolbar {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      padding: 10px;
-      background-color: #f4f4f4;
-    }
-    .toolbar button {
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-      background-color: #007bff;
-      color: white;
-      border-radius: 4px;
-    }
-    .toolbar button:hover {
-      background-color: #0056b3;
-    }
-    .fullscreen {
-      width: 100% !important;
-    }
-    .hidden {
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>DeepSeek Voice Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Font Awesome (CDNJS) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- jQuery (CDNJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f1f1f1;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        #chatbox {
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #dcf8c6;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .bot-message {
+            background: #e0e0e0;
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .file-upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-upload-btn:hover {
+            background: #0056b3;
+        }
+
+        #mic-btn {
+            display: block;
+            margin: 20px auto 0;
+            font-size: 24px;
+            padding: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #mic-btn.listening {
+            background: #dc3545;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+    </style>
 </head>
 <body>
-  <h1>HTML Compiler/Preview Tool</h1>
-  <p>© Liaj web pages</p>
-  <div class="toolbar">
-    <button id="fullscreenButton">Full-Screen Preview</button>
-    <button id="resetButton">Reset</button>
-    <button id="saveButton">Save</button>
-  </div>
-  <div class="container">
-    <textarea id="htmlInput" placeholder="Write your HTML code here..."></textarea>
-    <iframe id="preview"></iframe>
-  </div>
 
-  <script>
-    const htmlInput = document.getElementById('htmlInput');
-    const preview = document.getElementById('preview').contentWindow.document;
-    const fullscreenButton = document.getElementById('fullscreenButton');
-    const resetButton = document.getElementById('resetButton');
-    const saveButton = document.getElementById('saveButton');
+<div class="container">
+    <h1><i class="fas fa-robot"></i> DeepSeek Voice Chat</h1>
+    <div id="chatbox"></div>
 
-    let isFullscreen = false;
+    <div style="text-align: center; margin: 15px 0;">
+        <label for="file-upload" class="file-upload-btn">
+            <i class="fas fa-file-upload"></i> Upload PDF/DOCX
+        </label>
+        <input type="file" id="file-upload" accept=".pdf,.docx,.txt" hidden />
+    </div>
 
-    // Update the preview
-    function updatePreview() {
-      preview.open();
-      preview.write(htmlInput.value);
-      preview.close();
+    <button id="mic-btn"><i class="fas fa-microphone"></i></button>
+</div>
+
+<script>
+$(document).ready(function() {
+    const chatbox = $('#chatbox');
+    const micBtn = $('#mic-btn');
+    let isListening = false;
+    let recognition;
+
+    function addMessage(text, className) {
+        const msg = $('<div>').addClass('message ' + className).text(text);
+        chatbox.append(msg);
+        chatbox.scrollTop(chatbox[0].scrollHeight);
     }
 
-    // Full-screen functionality
-    fullscreenButton.addEventListener('click', () => {
-      isFullscreen = !isFullscreen;
-      if (isFullscreen) {
-        htmlInput.classList.add('hidden');
-        preview.parentElement.classList.add('fullscreen');
-        fullscreenButton.textContent = 'Exit Full-Screen';
-      } else {
-        htmlInput.classList.remove('hidden');
-        preview.parentElement.classList.remove('fullscreen');
-        fullscreenButton.textContent = 'Full-Screen Preview';
-      }
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = 1;
+            utter.pitch = 1;
+            speechSynthesis.speak(utter);
+        }
+    }
+
+    function sendToDeepSeek(text) {
+        addMessage("Thinking...", 'bot-message');
+        setTimeout(() => {
+            const reply = `You said: "${text}"`;
+            addMessage(reply, 'bot-message');
+            speak(reply);
+        }, 1500);
+    }
+
+    function resetMic() {
+        isListening = false;
+        micBtn.removeClass('listening');
+    }
+
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            isListening = true;
+            micBtn.addClass('listening');
+            addMessage("Listening...", 'user-message');
+        };
+
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            addMessage(transcript, 'user-message');
+            sendToDeepSeek(transcript);
+        };
+
+        recognition.onerror = (e) => {
+            console.error('Error:', e.error);
+            addMessage("Error: " + e.error, 'bot-message');
+            resetMic();
+        };
+
+        recognition.onend = resetMic;
+    } else {
+        addMessage("Speech recognition not supported.", 'bot-message');
+        micBtn.prop('disabled', true);
+    }
+
+    micBtn.click(() => {
+        if (!isListening && recognition) {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+                recognition.start();
+            }).catch(err => {
+                addMessage("Mic access denied. Please allow.", 'bot-message');
+            });
+        } else if (isListening) {
+            recognition.stop();
+        }
     });
 
-    // Reset functionality
-    resetButton.addEventListener('click', () => {
-      htmlInput.value = '';
-      updatePreview();
+    $('#file-upload').on('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const content = event.target.result;
+            addMessage("Uploaded: " + file.name, 'user-message');
+            sendToDeepSeek(content);
+        };
+
+        if (file.type === "text/plain") {
+            reader.readAsText(file);
+        } else {
+            addMessage("Only .txt supported directly. PDF/DOCX needs backend.", 'bot-message');
+        }
     });
+});
+</script>
 
-    // Save functionality
-    saveButton.addEventListener('click', () => {
-      const blob = new Blob([htmlInput.value], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'output.html';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    // Initialize with some example HTML
-    htmlInput.value = `<h1>Hello, World!</h1>
-<p>This is a simple HTML preview tool.</p>`;
-    updatePreview();
-
-    // Listen for input changes
-    htmlInput.addEventListener('input', updatePreview);
-  </script>
 </body>
 </html>
